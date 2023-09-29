@@ -107,10 +107,23 @@
                               colspan="1"
                           @endif>
                           @if ($eventStart->format('Y-m-d') <= $day && $eventEnd->format('Y-m-d') >= $day)
-                              <div class="event" data-eventid="{{ $event->id }}" data-eventname="{{ $event->name }}" 
-                                  data-start="{{ $eventStart->format('Y-m-d') }}" data-end="{{ $eventEnd->format('Y-m-d') }}" data-description="{{$event->description}}">
-                                  {{ $event->name }}
-                              </div>
+                          <div class="event" 
+                                data-eventid="{{ $event->id }}" 
+                                data-eventname="{{ $event->name }}" 
+                                data-start="{{ $eventStart->format('Y-m-d') }}" 
+                                data-end="{{ $eventEnd->format('Y-m-d') }}" 
+                                data-description="{{ $event->description }}" 
+                                data-status="{{ $event->status }}"
+                                style="background-color: 
+                                    @if ($event->status === 'todo')
+                                        #ced4da; 
+                                    @elseif ($event->status === 'in progress')
+                                        #00B4FC; 
+                                    @elseif ($event->status === 'done')
+                                        #32de84;
+                                    @endif">
+                                {{ $event->name }}
+                            </div>
                           @endif
                       </td>
                   @endforeach
@@ -120,44 +133,54 @@
         </table>
     </div>
   </div>
-  <div id="editEventModal" class="modal" style="display:none">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="createEventModalLabel">Edit event</h5>
-            <button type="button" class="btn btn-danger" id="deleteEventButton"><i class="material-icons">delete</i></button>
-          </div>
-          <div class="modal-body">
-            <form action="{{ route('editEvent') }}" method="POST">
-              @csrf
-              <input type="hidden" id="editEventId" name="id" value="">
-              <div class="mb-3">
-                <label for="editName" class="form-label">Name</label>
-                <input type="text" class="form-control" id="editName" name="name" required>
-              </div>
-              <div class="display">
-                <div class="mb-3" style="width:45%;">
-                  <label for="EventStart" class="form-label">Start</label>
-                  <input type="date" class="form-control" id="editStart" name="start" required>
+    <div id="editEventModal" class="modal" style="display:none">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createEventModalLabel">Edit event</h5>
+                    <button type="button" class="btn btn-danger" id="deleteEventButton"><i class="material-icons">delete</i></button>
                 </div>
-                <div class="mb-3" style="width:45%;">
-                  <label for="EventEnd" class="form-label">End</label>
-                  <input type="date" class="form-control" id="editEnd" name="end" required>
+                <div class="modal-body">
+                    <form action="{{ route('editEvent') }}" method="POST">
+                        @csrf
+                        <input type="hidden" id="editEventId" name="id" value="">
+                        <div class="display">
+                            <div class="mb-3" style="width:45%;">
+                                <label for="editName" class="form-label">Name</label>
+                                <input type="text" class="form-control" id="editName" name="name" required>
+                            </div>
+                            <div class="mb-3" style="width:45%;display:grid;">
+                                <label for="editStatus" class="form-label">Status</label>
+                                <select class="form-select" id="editStatus" name="status" required style="border: 1px solid #ced4da;border-radius: 0.25rem;height: 38px;">
+                                    <option value="todo">To Do</option>
+                                    <option value="in progress">In Progress</option>
+                                    <option value="done">Done</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="display">
+                            <div class="mb-3" style="width:45%;">
+                                <label for="EventStart" class="form-label">Start</label>
+                                <input type="date" class="form-control" id="editStart" name="start" required>
+                            </div>
+                            <div class="mb-3" style="width:45%;">
+                                <label for="EventEnd" class="form-label">End</label>
+                                <input type="date" class="form-control" id="editEnd" name="end" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="Eventdescription" class="form-label">Description</label>
+                            <textarea name="description" id="editDescription" cols="30" rows="10" required></textarea>
+                        </div>
+                        <div class="d-flex justify-content-end buttons" style="margin-bottom:-30px">
+                            <button type="button" class="btn btn-danger mt-3 mb-4" data-bs-dismiss="modal" style="margin-right:10px">Close</button>
+                            <button type="submit" class="btn btn-success mt-3 mb-4">Edit</button>
+                        </div>
+                    </form>
                 </div>
-              </div>
-              <div class="mb-3">
-                <label for="Eventdescription" class="form-label">Description</label>
-                <textarea name="description" id="editDescription" cols="30" rows="10" required></textarea>
-              </div>
-              <div class="d-flex justify-content-end buttons" style="margin-bottom:-30px">
-                <button type="button" class="btn btn-danger mt-3 mb-4" data-bs-dismiss="modal" style="margin-right:10px">Close</button>
-                <button type="submit" class="btn btn-success mt-3 mb-4">edit</button>
-              </div>
-            </form>
-          </div>
+            </div>
         </div>
     </div>
-  </div>
 
   <div class="day" id="day" style="display:none">
     <div style="overflow-y: scroll; max-height: 100%; height: 500px">
@@ -171,10 +194,23 @@
                 <tr>
                   <td>
                     @foreach ($currentDayEvents as $event)
-                        <div class="event" data-eventid="{{ $event->id }}" data-eventname="{{ $event->name }}" 
-                                  data-start="{{ $eventStart->format('Y-m-d') }}" data-end="{{ $eventEnd->format('Y-m-d') }}" data-description="{{$event->description}}">
-                            {{ $event->name }}
-                        </div>
+                    <div class="event" 
+                                data-eventid="{{ $event->id }}" 
+                                data-eventname="{{ $event->name }}" 
+                                data-start="{{ $eventStart->format('Y-m-d') }}" 
+                                data-end="{{ $eventEnd->format('Y-m-d') }}" 
+                                data-description="{{ $event->description }}" 
+                                data-status="{{ $event->status }}"
+                                style="background-color: 
+                                    @if ($event->status === 'todo')
+                                        #ced4da; 
+                                    @elseif ($event->status === 'in progress')
+                                        #00B4FC; 
+                                    @elseif ($event->status === 'done')
+                                        #32de84;
+                                    @endif">
+                                {{ $event->name }}
+                            </div>
                     @endforeach
                   </td>
                 </tr>
@@ -199,10 +235,23 @@
                       <td>
                           @foreach ($weekEvents as $event)
                               @if (\Carbon\Carbon::parse($event->start)->weekOfYear == $weekNumber || \Carbon\Carbon::parse($event->end)->weekOfYear == $weekNumber)
-                              <div class="event1" data-eventid="{{ $event->id }}" data-eventname="{{ $event->name }}" 
-                                  data-start="{{ $eventStart->format('Y-m-d') }}" data-end="{{ $eventEnd->format('Y-m-d') }}" data-description="{{$event->description}}">
-                                          {{ $event->name }}
-                                      </div><br>
+                              <div class="event" 
+                                data-eventid="{{ $event->id }}" 
+                                data-eventname="{{ $event->name }}" 
+                                data-start="{{ $eventStart->format('Y-m-d') }}" 
+                                data-end="{{ $eventEnd->format('Y-m-d') }}" 
+                                data-description="{{ $event->description }}" 
+                                data-status="{{ $event->status }}"
+                                style="background-color: 
+                                    @if ($event->status === 'todo')
+                                        #ced4da; 
+                                    @elseif ($event->status === 'in progress')
+                                        #00B4FC; 
+                                    @elseif ($event->status === 'done')
+                                        #32de84;
+                                    @endif">
+                                {{ $event->name }}
+                            </div>
                               @endif
                           @endforeach
                       </td>
@@ -321,49 +370,65 @@
     tableBody.empty();
 
     $.each(task, function(index, task) {
-      var taskRow = '<tr>';
-      var eventStart = new Date(task.start);
-      var eventEnd = new Date(task.end);
+        var taskRow = '<tr>';
+        var eventStart = new Date(task.start);
+        var eventEnd = new Date(task.end);
 
-      var formattedStart = eventStart.toISOString().split('T')[0];
+        var formattedStart = eventStart.toISOString().split('T')[0];
+        var formattedEnd = eventEnd.toISOString().split('T')[0];
 
-      var formattedEnd = eventEnd.toISOString().split('T')[0];
+        if (eventStart.toDateString() !== eventEnd.toDateString()) {
+            eventStart.setDate(eventStart.getDate() - 1);
+        }
 
-      if (eventStart.toDateString() !== eventEnd.toDateString()) {
-          eventStart.setDate(eventStart.getDate() - 1);
-      }
+        var eventDuration = Math.ceil((eventEnd - eventStart) / (1000 * 60 * 60 * 24));
+        var isSameDayEvent = eventStart.toDateString() === eventEnd.toDateString();
 
-      var eventDuration = Math.ceil((eventEnd - eventStart) / (1000 * 60 * 60 * 24));
-      var isSameDayEvent = eventStart.toDateString() === eventEnd.toDateString();
+        var taskCell = '';
+        if (eventDuration > 1) {
+            taskCell = '<td colspan="' + eventDuration + '">';
+        } else {
+            taskCell = '<td colspan="1">';
+        }
 
-      var taskCell = '';
-      if (eventDuration > 1) {
-          taskCell = '<td colspan="' + eventDuration + '">';
-      } else {
-          taskCell = '<td colspan="1">';
-      }
-      taskCell += '<div class="event" data-eventid="' + task.id + '" ' +
-                        'data-eventname="' + task.name + '" ' +
-                        'data-start="' + formattedStart + '" ' +
-                        'data-end="' + formattedEnd + '" ' +
-                        'data-description="' + task.description + '" ' +
-                        'draggable="true">' + task.name + '</div>';
-      taskCell += '</td>';
+        var backgroundColor = '';
+        switch (task.status) {
+            case 'todo':
+                backgroundColor = '#ced4da'; 
+                break;
+            case 'in progress':
+                backgroundColor = '#00B4FC'; 
+                break;
+            case 'done':
+                backgroundColor = '#32de84'; 
+                break;
+            default:
+                backgroundColor = 'white'; 
+        }
 
-      var cellAdded = false;
+        taskCell += '<div class="event" data-eventid="' + task.id + '" ' +
+                    'data-eventname="' + task.name + '" ' +
+                    'data-start="' + formattedStart + '" ' +
+                    'data-end="' + formattedEnd + '" ' +
+                    'data-description="' + task.description + '" ' +
+                    'data-status="' + task.status + '" ' +
+                    'draggable="true" style="background-color: ' + backgroundColor + ';">' + task.name + '</div>';
+        taskCell += '</td>';
 
-      $.each(weekDays, function(dayIndex, day) {
-          var currentDay = new Date(day);
-          if (!cellAdded && ((isSameDayEvent && currentDay.toDateString() === eventStart.toDateString()) || (currentDay >= eventStart && currentDay <= eventEnd))) {
-              taskRow += taskCell;
-              cellAdded = true; 
-          } else {
-              taskRow += '<td></td>';
-          }
-      });
+        var cellAdded = false;
 
-      taskRow += '</tr>';
-      tableBody.append(taskRow);
+        $.each(weekDays, function(dayIndex, day) {
+            var currentDay = new Date(day);
+            if (!cellAdded && ((isSameDayEvent && currentDay.toDateString() === eventStart.toDateString()) || (currentDay >= eventStart && currentDay <= eventEnd))) {
+                taskRow += taskCell;
+                cellAdded = true;
+            } else {
+                taskRow += '<td></td>';
+            }
+        });
+
+        taskRow += '</tr>';
+        tableBody.append(taskRow);
     });
 
     var tableHead = table.find('thead');
@@ -375,8 +440,8 @@
     });
 
     var h1Element = $('h1.week');
-    h1Element.html('<span></span><strong>' + start + ' - ' + end + '</strong> ' + year);  
-  }
+    h1Element.html('<span></span><strong>' + start + ' - ' + end + '</strong> ' + year);
+    }
   function updateTableDay(day1, today, task) {
 
     var table = $('table.vandaag');
@@ -396,12 +461,27 @@
       var formattedStart = eventStart.toISOString().split('T')[0];
 
       var formattedEnd = eventEnd.toISOString().split('T')[0];
+      var backgroundColor = '';
+        switch (task.status) {
+            case 'todo':
+                backgroundColor = '#ced4da'; 
+                break;
+            case 'in progress':
+                backgroundColor = '#00B4FC'; 
+                break;
+            case 'done':
+                backgroundColor = '#32de84'; 
+                break;
+            default:
+                backgroundColor = 'white'; 
+        }
       var cellContent = '<div class="event" data-eventid="' + task.id + '" ' +
                         'data-eventname="' + task.name + '" ' +
                         'data-start="' + formattedStart + '" ' +
                         'data-end="' + formattedEnd + '" ' +
                         'data-description="' + task.description + '" ' +
-                        'draggable="true">' + task.name + '</div>';
+                        'data-status="' + task.status + '" ' +
+                        'draggable="true" style="background-color: ' + backgroundColor + ';">' + task.name + '</div>';
       eventRow += cellContent;
     });
 
@@ -426,14 +506,28 @@
             var eventWeek = getWeekOfYear(eventStartDate);
             var formattedStart = eventStartDate.toISOString().split('T')[0];
             var formattedEnd = eventEndDate.toISOString().split('T')[0];
+            switch (event.status) {
+            case 'todo':
+                backgroundColor = '#ced4da'; 
+                break;
+            case 'in progress':
+                backgroundColor = '#00B4FC'; 
+                break;
+            case 'done':
+                backgroundColor = '#32de84'; 
+                break;
+            default:
+                backgroundColor = 'white'; 
+        }
             
             if (eventWeek === weekNumber) {
-                cellContent += '<div class="event" data-eventid="' + event.id + '" ' +
+                cellContent += '<div class="event1" data-eventid="' + event.id + '" ' +
                         'data-eventname="' + event.name + '" ' +
                         'data-start="' + formattedStart + '" ' +
                         'data-end="' + formattedEnd + '" ' +
                         'data-description="' + event.description + '" ' +
-                        'draggable="true">' + event.name + '</div>';
+                        'data-status="' + event.status + '" ' +
+                        'draggable="true" style="background-color: ' + backgroundColor + ';">' + event.name + '</div>';
             }
         });
 
@@ -547,6 +641,7 @@
         const eventName = draggedEvent.getAttribute('data-eventname');
         let start = new Date(draggedEvent.getAttribute('data-start'));
         let end = new Date(draggedEvent.getAttribute('data-end'));
+        let status = draggedEvent.getAttribute('data-status');
         const columnIndex = Array.from(this.parentElement.children).indexOf(this);
         const cellDate = new Date(weekDays[columnIndex]);
         const now = new Date();
@@ -639,8 +734,9 @@
       const start = $(this).data("start");
       const end = $(this).data("end");
       const description = $(this).data("description");
+      const status = $(this).data("status");
 
-      // Assuming you have the appropriate modal and input IDs
+      $("#editStatus").val(status);
       $("#editName").val(eventname);
       $("#editEventId").val(eventId);
       $("#editStart").val(start);
@@ -657,6 +753,9 @@
       const start = $(this).data("start");
       const end = $(this).data("end");
       const description = $(this).data("description");
+      const status = $(this).data("status");
+
+      $("#editStatus").val(status);
 
       $("#editName").val(eventname);
       $("#editEventId").val(eventId);
@@ -674,13 +773,14 @@
       const start = $(this).data("start");
       const end = $(this).data("end");
       const description = $(this).data("description");
+      const status = $(this).data("status");
 
+      $("#editStatus").val(status);
       $("#editName").val(eventname);
       $("#editEventId").val(eventId);
       $("#editStart").val(start);
       $("#editEnd").val(end);
       $("#editDescription").val(description);
-
       $("#editEventModal").modal("show");
     });
   });

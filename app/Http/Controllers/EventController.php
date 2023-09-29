@@ -38,6 +38,7 @@ class EventController extends Controller
         $event->start = $request->start . ' ' . $currentTime;
         $event->end = $request->end . ' ' . $currentTime;
         $event->description = $request->description;
+        $event->status = $request->status;
     
         $event->save();
     
@@ -58,7 +59,6 @@ class EventController extends Controller
     
             return redirect()->route('dashboard')->with('success', 'Event updated successfully');
         } else {
-            // Handle the case where the event was not found
             return redirect()->route('dashboard')->with('error', 'Event not found');
         }
     }

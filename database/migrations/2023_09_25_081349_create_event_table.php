@@ -18,6 +18,7 @@ return new class extends Migration
             $table->dateTime('end');  
             $table->text('description');
             $table->string('weeknumber');
+            $table->enum('status', ['todo', 'in progress', 'done'])->default('todo');
             $table->timestamps();
         });
     }
