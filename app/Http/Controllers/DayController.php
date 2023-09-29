@@ -19,12 +19,12 @@ class DayController extends Controller
         $currentDayEvents = Event::where(function ($query) use ($vandag) {
             $query->whereDate('start', '<=', $vandag)
                 ->whereDate('end', '>=', $vandag);
-        })->get();
-        // dd($currentDayEvents);
+        })->orderBy('name', 'asc')->get();
         $weekStartDate = $now->startOfWeek()->format('Y-m-d');
         $weekEndDate = $now->endOfWeek()->format('Y-m-d');
         $events = Event::whereBetween('start', [$weekStartDate, $weekEndDate])
             ->orWhereBetween('end', [$weekStartDate, $weekEndDate])
+            ->orderBy('name', 'asc')
             ->get();
         $weekNumbers = [
             Carbon::parse($weekStartDate)->subWeeks(2)->weekOfYear,
@@ -37,7 +37,7 @@ class DayController extends Controller
         $weekEvents = Event::where(function ($query) use ($weekNumbers) {
             $query->whereIn(DB::raw('WEEK(start)'), $weekNumbers)
                 ->orWhereIn(DB::raw('WEEK(end)'), $weekNumbers);
-        })->get();
+        })->orderBy('name', 'asc')->get();
 
         
         $weekDays = [];
@@ -88,6 +88,7 @@ class DayController extends Controller
             $weekEndDate = $firstDayOfWeek->endOfWeek()->format('Y-m-d');
             $task = Event::whereBetween('start', [$weekStartDate, $weekEndDate])
             ->orWhereBetween('end', [$weekStartDate, $weekEndDate])
+            ->orderBy('name', 'asc')
             ->get();
         
             $weekDays = [];
@@ -123,7 +124,7 @@ class DayController extends Controller
         $task = Event::where(function ($query) use ($today) {
             $query->whereDate('start', '<=', $today)
                 ->whereDate('end', '>=', $today);
-        })->get();
+        })->orderBy('name', 'asc')->get();
 
         return response()->json([
             'day1' => $day1->format('l'),
@@ -159,7 +160,7 @@ class DayController extends Controller
             $targetWeekNumbers = $weekNumbers;
         }
     
-        $weekEvents = Event::whereIn('weeknumber', $targetWeekNumbers)->get();
+        $weekEvents = Event::whereIn('weeknumber', $targetWeekNumbers)->orderBy('name', 'asc')->get();
         
         return response()->json(['weekNumbers' => $targetWeekNumbers, 'weekEvents' => $weekEvents]);
     }
