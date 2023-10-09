@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DayController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\ItemController;
 
 /*
 |--------------------------------------------------------------------------
@@ -34,8 +35,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/calendar/paginationFiveWeek',[DayController::class, 'paginationFiveWeek'])->name('calendar.paginationFiveWeek')->middleware('web');
     Route::post('/createEvent',[EventController::class,'create'])->name('createEvent');
     Route::post('/editEvent',[EventController::class,'edit'])->name('editEvent');
+    Route::post('/editItem',[EventController::class,'editItem'])->name('editItem');
     Route::delete('/deleteEvent',[EventController::class,'delete'])->name('deleteEvent');
     Route::post('/updateEvent',[EventController::class,'update'])->name('updateEvent');
+    Route::post('/updateEventWeek',[EventController::class,'updateWeek'])->name('updateEventWeek');
+    Route::post('/updateItem',[EventController::class,'updateItem'])->name('updateItem');
+    Route::get('/item',[ItemController::class,'index'])->name('item');
 });
 
 require __DIR__.'/auth.php';

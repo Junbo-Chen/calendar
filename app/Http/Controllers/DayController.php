@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use App\Models\Event;
+use App\Models\Order;
 use Illuminate\Support\Facades\DB;
 
 class DayController extends Controller
@@ -13,6 +14,7 @@ class DayController extends Controller
     public function Week()
     {
         $now = Carbon::now('Europe/Amsterdam')->locale('nl'); 
+        $orders = Order::all();
         $vandag = $now->format('Y-m-d');
         $day1 = $now->format('l');
         $today = $now->format('d M Y'); 
@@ -21,11 +23,17 @@ class DayController extends Controller
                 ->whereDate('end', '>=', $vandag);
         })->orderBy('name', 'asc')->get();
         $weekStartDate = $now->startOfWeek()->format('Y-m-d');
+
         $weekEndDate = $now->endOfWeek()->format('Y-m-d');
-        $events = Event::whereBetween('start', [$weekStartDate, $weekEndDate])
-            ->orWhereBetween('end', [$weekStartDate, $weekEndDate])
-            ->orderBy('name', 'asc')
-            ->get();
+        $events = Event::select('events.id', 'events.name', 'events.start', 'events.end', 'events.description', 'events.status', 'order_event.order_id')
+        ->join('order_event', 'events.id', '=', 'order_event.event_id')
+        ->where(function($query) use ($weekStartDate, $weekEndDate) {
+            $query->where('events.start', '<=', $weekEndDate)
+                ->orWhere('events.end', '>=', $weekStartDate);
+        })
+        ->orderBy('order_event.order_id')
+        ->orderBy('events.name', 'asc')
+        ->get();
         $weekNumbers = [
             Carbon::parse($weekStartDate)->subWeeks(2)->weekOfYear,
             Carbon::parse($weekStartDate)->subWeeks(1)->weekOfYear,
@@ -63,6 +71,7 @@ class DayController extends Controller
             'events' => $events,
             'currentDayEvents' => $currentDayEvents,
             'weekEvents' => $weekEvents,
+            'orders' => $orders,
         ]);      
     }
 
@@ -71,9 +80,9 @@ class DayController extends Controller
         if ($request->ajax()) {
             $action = $request->input('action');
             $DaysOfWeek = $request->input('weekDays');
-        
+
             $firstDayOfWeek = Carbon::createFromFormat('Y-m-d', $DaysOfWeek[0]);
-            
+
             if ($action === 'next') {
                 $firstDayOfWeek->addWeek();
             } elseif ($action === 'previous') {
@@ -83,19 +92,26 @@ class DayController extends Controller
             $year = Carbon::parse($firstDayOfWeek)->year;
             $start = $firstDayOfWeek->startOfWeek()->isoFormat('DD MMM', 'nl');
             $end = $firstDayOfWeek->endOfWeek()->isoFormat('DD MMM', 'nl');
-        
+
             $weekStartDate = $firstDayOfWeek->startOfWeek()->format('Y-m-d');
             $weekEndDate = $firstDayOfWeek->endOfWeek()->format('Y-m-d');
-            $task = Event::whereBetween('start', [$weekStartDate, $weekEndDate])
-            ->orWhereBetween('end', [$weekStartDate, $weekEndDate])
-            ->orderBy('name', 'asc')
-            ->get();
-        
+            
+            $task = Event::select('events.id', 'events.name', 'events.start', 'events.end', 'events.description', 'events.status', 'order_event.order_id')
+                            ->join('order_event', 'events.id', '=', 'order_event.event_id')
+                            ->where(function($query) use ($weekStartDate, $weekEndDate) {
+                                $query->where('events.start', '<=', $weekEndDate)
+                                    ->orWhere('events.end', '>=', $weekStartDate);
+                            })
+                            ->orderBy('order_event.order_id')
+                            ->orderBy('events.name', 'asc')
+                            ->get();
+
             $weekDays = [];
             while ($weekStartDate <= $weekEndDate) {
                 $weekDays[] = $weekStartDate;
                 $weekStartDate = Carbon::parse($weekStartDate)->addDay()->format('Y-m-d');
-            }       
+            }
+            
             return response()->json([
                 'weekDays' => $weekDays,
                 'start' => $start,
@@ -103,7 +119,6 @@ class DayController extends Controller
                 'year' => $year,
                 'task' => $task,
             ]);
-            
         }
     }
     public function paginationDay(Request $request)
@@ -120,11 +135,13 @@ class DayController extends Controller
             $today->subDay();
         }
 
-        // Query events that either start or end on the specified day
         $task = Event::where(function ($query) use ($today) {
             $query->whereDate('start', '<=', $today)
                 ->whereDate('end', '>=', $today);
-        })->orderBy('name', 'asc')->get();
+            })
+        ->join('order_event', 'events.id', '=', 'order_event.event_id')
+        ->orderBy('order_event.order_id')
+        ->orderBy('name', 'asc')->get();
 
         return response()->json([
             'day1' => $day1->format('l'),
@@ -135,7 +152,7 @@ class DayController extends Controller
     public function paginationFiveWeek(Request $request) {
         $action = $request->input('action');
         $weekNumbers = $request->input('weekNumbers');
-
+    
         $nextWeekNumbers = [];
         $previousWeekNumbers = [];
     
@@ -151,7 +168,7 @@ class DayController extends Controller
             }
             $previousWeekNumbers[] = $previousWeekNumber;
         }
-        
+    
         if ($action === 'next') {
             $targetWeekNumbers = $nextWeekNumbers;
         } elseif ($action === 'previous') {
@@ -160,8 +177,18 @@ class DayController extends Controller
             $targetWeekNumbers = $weekNumbers;
         }
     
-        $weekEvents = Event::whereIn('weeknumber', $targetWeekNumbers)->orderBy('name', 'asc')->get();
-        
+        $weekEvents = Event::where(function ($query) use ($targetWeekNumbers) {
+            $query->where(function ($q) use ($targetWeekNumbers) {
+                $q->where('start', '<=', Carbon::now()->endOfWeek());
+                $q->orWhere('end', '>=', Carbon::now()->startOfWeek());
+            });
+            $query->orWhere(function ($q) use ($targetWeekNumbers) {
+                $q->whereRaw('WEEK(start) <= ? AND WEEK(end) >= ?', [$targetWeekNumbers[0], $targetWeekNumbers[0]]);
+            });
+        })
+        ->orderBy('name', 'asc')
+        ->get();
+    
         return response()->json(['weekNumbers' => $targetWeekNumbers, 'weekEvents' => $weekEvents]);
     }
     

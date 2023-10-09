@@ -16,4 +16,10 @@ class Event extends Model
         'description',
         'weeknumber',
     ];
+
+    public function orders()
+    {
+        return $this->belongsToMany(Order::class, 'order_event', 'event_id', 'order_id');
+    }
+    
 }

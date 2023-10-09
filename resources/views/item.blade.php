@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Calendar') }}
+            {{ __('Item') }}
         </h2>
     </x-slot>
         <script
@@ -10,7 +10,28 @@
           crossorigin="anonymous"></script>
           <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.min.js" integrity="sha384-cuYeSxntonz0PPNlHhBs68uyIAVpIIOZZ5JqeqvYYIcEL727kskC66kF92t6Xl2V" crossorigin="anonymous"></script>
+        <style>
+    .event.event-1 {
+        background-color: #FF5733;
+    }
 
+    .event.event-2 {
+        background-color: #33FF57;
+    }
+    .event.event-3 {
+        background-color: brown;
+    }
+    .event1.event-1 {
+        background-color: #FF5733;
+    }
+
+    .event1.event-2 {
+        background-color: #33FF57;
+    }
+    .event1.event-3 {
+        background-color: brown;
+    }
+</style>
 <div class="calendar" style="margin-top:20px">
   
   <header>
@@ -31,7 +52,7 @@
             <div class="icon secondary chevron_right" id="nextButtonDay" style="display:none">›</div>
             <div class="icon secondary chevron_right" id="nextButtonFiveWeek" style="display:none">›</div>
           </div> 
-          <div class="end" style="width:33%;">
+          <!-- <div class="end" style="width:33%;">
             <button type="button" class="btn btn-success mt-3 mb-4" data-bs-toggle="modal" data-bs-target="#createEventModal">Create</button>
               <div class="modal fade" id="createEventModal" tabindex="-1" aria-labelledby="createEventModalLabel" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered">
@@ -43,19 +64,9 @@
                     <div class="modal-body">
                       <form action="{{ route('createEvent') }}" method="POST">
                         @csrf
-                        <div class="display">
-                          <div class="mb-3" style="width:45%">
-                            <label for="EventName" class="form-label">Name</label>
-                            <input type="text" class="form-control" id="EventName" name="name" required style="border: 1px solid #ced4da;border-radius: 0.25rem;height: 38px;">
-                          </div>
-                          <div class="mb-3" style="display:grid;width:45%">
-                              <label for="associatedOrders" class="form-label">Order</label>
-                              <select  class="form-select" id="associatedOrders" name="order" style="border: 1px solid #ced4da;border-radius: 0.25rem;height: 38px;">
-                                  @foreach ($orders as $order)
-                                      <option value="{{ $order->id }}">{{ $order->name }}</option>
-                                  @endforeach
-                              </select>
-                          </div>
+                        <div class="mb-3">
+                          <label for="EventName" class="form-label">Name</label>
+                          <input type="text" class="form-control" id="EventName" name="name" required>
                         </div>
                         <div class="display">
                           <div class="mb-3" style="width:45%;">
@@ -80,91 +91,75 @@
                   </div>
                 </div>
               </div>
-          </div>
+          </div> -->
           <div style="align-self: flex-start; flex: 0 0 1"></div>
     </div>
   </header>
   
-  <div class="week" id="thisWeek" style="max-width: 1280px; height: 500px; max-height: 500px; overflow: hidden;">
-    <div style="overflow-y: scroll; max-height: 100%; height: 500px;">
-        <table class="combinedTable" style="width: 100%; table-layout: fixed;">
-            <thead>
-                <tr>
-                    @foreach ($weekDays as $day)
-                        <th>{{ $day }}</th>
+    <div class="week" id="thisWeek" style="max-width: 1280px; height: 500px; max-height: 500px; overflow: hidden;">
+        <div style="overflow-y: scroll; max-height: 100%; height: 500px;">
+            <table class="combinedTable" style="width: 100%; table-layout: fixed;">
+                <thead>
+                    <tr>
+                        @foreach ($weekDays as $day)
+                            <th>{{ $day }}</th>
+                        @endforeach
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach ($events as $event)
+                        @php
+                            $eventStart = \Carbon\Carbon::parse($event->start);
+                            $eventEnd = \Carbon\Carbon::parse($event->end);
+                            $eventDuration = $eventEnd->diffInDays($eventStart);
+                        @endphp
+                        <tr>
+                            @php $colspanSet = false; @endphp
+                            @foreach ($weekDays as $day)
+                                <td
+                                    @if ($eventStart->format('Y-m-d') <= $day && $eventEnd->format('Y-m-d') >= $day)
+                                        @if ($eventStart->format('Y-m-d') == $day && !$colspanSet)
+                                            colspan="{{ $eventDuration + 1 }}"
+                                            @php $colspanSet = true; @endphp
+                                        @else
+                                            style="display: none;"
+                                        @endif
+                                    @else
+                                        colspan="1"
+                                    @endif>
+                                    @if ($eventStart->format('Y-m-d') <= $day && $eventEnd->format('Y-m-d') >= $day)
+                                        <div class="event event-{{ $event->order_id }}" 
+                                            data-eventid="{{ $event->id }}" 
+                                            data-eventname="{{ $event->name }}" 
+                                            data-start="{{ $eventStart->format('Y-m-d') }}" 
+                                            data-end="{{ $eventEnd->format('Y-m-d') }}" 
+                                            data-description="{{ $event->description }}" 
+                                            data-status="{{ $event->status }}">
+                                            {{ $event->name }}
+                                        </div>
+                                    @endif
+                                </td>
+                            @endforeach
+                        </tr>
                     @endforeach
-                </tr>
-            </thead>
-            <tbody>
-            @foreach ($events as $event)
-              @php
-                $now = \Carbon\Carbon::now('Europe/Amsterdam')->locale('nl'); 
-                $weekStartDate = $now->startOfWeek()->format('Y-m-d');
-                $weekStart = \Carbon\Carbon::parse($weekStartDate);
-                $eventStart = \Carbon\Carbon::parse($event->start);
-                $eventEnd = \Carbon\Carbon::parse($event->end);
-                if ($eventStart < $weekStart) {
-                  $eventStart = $weekStart;
-                }
-                $eventDuration = $eventEnd->diffInDays($eventStart);
-              @endphp
-              <tr>
-                  @php $colspanSet = false; @endphp
-                  @foreach ($weekDays as $day)
-                      <td
-                          @if ($eventStart->format('Y-m-d') <= $day && $eventEnd->format('Y-m-d') >= $day)
-                              @if ($eventStart->format('Y-m-d') == $day && !$colspanSet)
-                                  @php
-                                      $colspan = min($eventDuration, 6 - \Carbon\Carbon::parse($day)->dayOfWeek + 1);
-                                      $colspanSet = true;
-                                  @endphp
-                                  colspan="{{ $colspan }}"
-                              @else
-                                  style="display: none;"
-                              @endif
-                          @else
-                              colspan="1"
-                          @endif>
-                          @if ($eventStart->format('Y-m-d') <= $day && $eventEnd->format('Y-m-d') >= $day)
-                          <div class="event" 
-                                data-eventid="{{ $event->id }}" 
-                                data-eventname="{{ $event->name }}" 
-                                data-start="{{ $eventStart->format('Y-m-d') }}" 
-                                data-end="{{ $eventEnd->format('Y-m-d') }}" 
-                                data-description="{{ $event->description }}" 
-                                data-status="{{ $event->status }}"
-                                style="background-color: 
-                                    @if ($event->status === 'todo')
-                                        #ced4da; 
-                                    @elseif ($event->status === 'in progress')
-                                        #00B4FC; 
-                                    @elseif ($event->status === 'done')
-                                        #32de84;
-                                    @endif">
-                                {{ $event->name }}
-                            </div>
-                          @endif
-                      </td>
-                  @endforeach
-              </tr>
-            @endforeach
-            </tbody>
-        </table>
+                </tbody>
+            </table>
+        </div>
     </div>
-  </div>
+
   <div id="editEventModal" class="modal" style="display:none">
       <div class="modal-dialog modal-dialog-centered">
           <div class="modal-content">
               <div class="modal-header">
-                  <h5 class="modal-title" id="editEventModalLabel">Edit event</h5>
+                  <h5 class="modal-title" id="createEventModalLabel">Edit event</h5>
                   <button type="button" class="btn btn-danger" id="deleteEventButton"><i class="material-icons">delete</i></button>
               </div>
               <div class="modal-body">
-                  <form action="{{ route('editEvent') }}" method="POST">
+                  <form action="{{ route('editItem') }}" method="POST">
                       @csrf
                       <input type="hidden" id="editEventId" name="id" value="">
                       <div class="display">
-                          <div class="mb-3" style="width:45%;">
+                          <div class="mb-3" style="width:45%">
                               <label for="editName" class="form-label">Name</label>
                               <input type="text" class="form-control" id="editName" name="name" required>
                           </div>
@@ -176,7 +171,7 @@
                                   <option value="done">Done</option>
                               </select>
                           </div>
-                      </div>
+                        </div>
                       <div class="display">
                           <div class="mb-3" style="width:45%;">
                               <label for="EventStart" class="form-label">Start</label>
@@ -213,21 +208,13 @@
                 <tr>
                   <td>
                     @foreach ($currentDayEvents as $event)
-                    <div class="event" 
+                    <div class="event event-{{ $event->order_id }}" 
                                 data-eventid="{{ $event->id }}" 
                                 data-eventname="{{ $event->name }}" 
                                 data-start="{{ $eventStart->format('Y-m-d') }}" 
                                 data-end="{{ $eventEnd->format('Y-m-d') }}" 
                                 data-description="{{ $event->description }}" 
-                                data-status="{{ $event->status }}"
-                                style="background-color: 
-                                    @if ($event->status === 'todo')
-                                        #ced4da; 
-                                    @elseif ($event->status === 'in progress')
-                                        #00B4FC; 
-                                    @elseif ($event->status === 'done')
-                                        #32de84;
-                                    @endif">
+                                data-status="{{ $event->status }}">
                                 {{ $event->name }}
                             </div>
                     @endforeach
@@ -240,51 +227,41 @@
 
   <div class="fiveWeek" id="fiveWeek" style="display:none">
     <div style="overflow-y: scroll; max-height: 100%;height:500px">
-        <table class="week">
-            <thead>
-                <tr>
-                    @foreach ($weekNumbers as $number)
-                        <th>Week {{ $number }}</th>
-                    @endforeach
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($weekEvents as $event)
-                    @php
-                        $eventStart = \Carbon\Carbon::parse($event->start);
-                        $eventEnd = \Carbon\Carbon::parse($event->end);
-                    @endphp
-                    <tr>
-                        @foreach ($weekNumbers as $weekNumber)
-                            <td>
-                                @if ($eventStart->weekOfYear <= $weekNumber && $eventEnd->weekOfYear >= $weekNumber)
-                                    <div class="event1" 
-                                        data-eventid="{{ $event->id }}" 
-                                        data-eventname="{{ $event->name }}" 
-                                        data-start="{{ $eventStart->format('Y-m-d') }}" 
-                                        data-end="{{ $eventEnd->format('Y-m-d') }}" 
-                                        data-description="{{ $event->description }}" 
-                                        data-status="{{ $event->status }}"
-                                        style="background-color: 
-                                            @if ($event->status === 'todo')
-                                                #ced4da; 
-                                            @elseif ($event->status === 'in progress')
-                                                #00B4FC; 
-                                            @elseif ($event->status === 'done')
-                                                #32de84;
-                                            @endif">
-                                        {{ $event->name }}
-                                    </div>
-                                @endif
-                            </td>
-                        @endforeach
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
+      <table class="week">
+          <thead>
+              <tr>
+                  @foreach ($weekNumbers as $number)
+                      <th>Week {{ $number }}</th>
+                  @endforeach
+              </tr>
+          </thead>
+          <tbody>
+              <tr>
+                  @foreach ($weekNumbers as $weekNumber)
+                      <td>
+                          @foreach ($weekEvents as $event)
+                            @php
+                                $eventStart = \Carbon\Carbon::parse($event->start);
+                                $eventEnd = \Carbon\Carbon::parse($event->end);
+                            @endphp
+                              @if (\Carbon\Carbon::parse($event->start)->weekOfYear == $weekNumber || \Carbon\Carbon::parse($event->end)->weekOfYear == $weekNumber)
+                              <div class="event1 event-{{ $event->order_id }}" 
+                                data-eventid="{{ $event->id }}" 
+                                data-eventname="{{ $event->name }}" 
+                                data-start="{{ $eventStart->format('Y-m-d') }}" 
+                                data-end="{{ $eventEnd->format('Y-m-d') }}" 
+                                data-description="{{ $event->description }}" 
+                                data-status="{{ $event->status }}">
+                                {{ $event->name }}
+                            </div>
+                              @endif
+                          @endforeach
+                      </td>
+                  @endforeach
+              </tr>
+          </tbody>
+      </table>
     </div>
-  </div>
-
 </div>
 
 </x-app-layout>
@@ -376,7 +353,7 @@
           task: task,
         },
         success: function(response) {
-          console.log('POST request successful:', response);
+          // console.log('POST request successful:', response);
           weekDays = response.weekDays;
           start = response.start;
           end = response.end;
@@ -402,59 +379,35 @@
         var formattedStart = eventStart.toISOString().split('T')[0];
         var formattedEnd = eventEnd.toISOString().split('T')[0];
 
-        var isSameDay = eventStart.toDateString() === new Date(weekDays[0]).toDateString();
+        if (eventStart.toDateString() !== eventEnd.toDateString()) {
+            eventStart.setDate(eventStart.getDate() - 1);
+        }
 
+        var eventDuration = Math.ceil((eventEnd - eventStart) / (1000 * 60 * 60 * 24));
+        var isSameDayEvent = eventStart.toDateString() === eventEnd.toDateString();
 
         var taskCell = '';
-        var eventDuration = Math.ceil((eventEnd - eventStart) / (1000 * 60 * 60 * 24));
-
-        if (eventStart < new Date(weekDays[0])) {
-            eventDuration -= Math.ceil((new Date(weekDays[0]) - eventStart) / (1000 * 60 * 60 * 24));
-            eventStart = new Date(weekDays[0]);
-        }
-
-        var backgroundColor = '';
-        switch (task.status) {
-            case 'todo':
-                backgroundColor = '#ced4da'; 
-                break;
-            case 'in progress':
-                backgroundColor = '#00B4FC'; 
-                break;
-            case 'done':
-                backgroundColor = '#32de84'; 
-                break;
-            default:
-                backgroundColor = 'white'; 
-        }
-
-        if (eventDuration >= 1) {
+        if (eventDuration > 1) {
             taskCell = '<td colspan="' + eventDuration + '">';
-            taskCell += '<div class="event" data-eventid="' + task.id + '" ' +
-                        'data-eventname="' + task.name + '" ' +
-                        'data-start="' + formattedStart + '" ' +
-                        'data-end="' + formattedEnd + '" ' +
-                        'data-description="' + task.description + '" ' +
-                        'data-status="' + task.status + '" ' +
-                        'draggable="true" style="background-color: ' + backgroundColor + ';">' + task.name + '</div>';
-            taskCell += '</td>';
         } else {
-            taskCell = '<td>';
-            taskCell += '<div class="event" data-eventid="' + task.id + '" ' +
-                        'data-eventname="' + task.name + '" ' +
-                        'data-start="' + formattedStart + '" ' +
-                        'data-end="' + formattedEnd + '" ' +
-                        'data-description="' + task.description + '" ' +
-                        'data-status="' + task.status + '" ' +
-                        'draggable="true" style="background-color: ' + backgroundColor + ';">' + task.name + '</div>';
-            taskCell += '</td>';
+            taskCell = '<td colspan="1">';
         }
+
+
+        taskCell += '<div class="event event-' + task.order_id +'" data-eventid="' + task.id + '" ' +
+                    'data-eventname="' + task.name + '" ' +
+                    'data-start="' + formattedStart + '" ' +
+                    'data-end="' + formattedEnd + '" ' +
+                    'data-description="' + task.description + '" ' +
+                    'data-status="' + task.status + '" ' +
+                    'draggable="true">' + task.name + '</div>';
+        taskCell += '</td>';
 
         var cellAdded = false;
 
         $.each(weekDays, function(dayIndex, day) {
             var currentDay = new Date(day);
-            if (!cellAdded && ((isSameDay && currentDay.toDateString() === eventStart.toDateString()) || (currentDay >= eventStart && currentDay <= eventEnd))) {
+            if (!cellAdded && ((isSameDayEvent && currentDay.toDateString() === eventStart.toDateString()) || (currentDay >= eventStart && currentDay <= eventEnd))) {
                 taskRow += taskCell;
                 cellAdded = true;
             } else {
@@ -473,10 +426,10 @@
         var newHeader = '<th>' + day + '</th>';
         tableHead.append(newHeader);
     });
+    initializeEventListeners();
     var h1Element = $('h1.week');
     h1Element.html('<span></span><strong>' + start + ' - ' + end + '</strong> ' + year);
   }
-
   function updateTableDay(day1, today, task) {
 
     var table = $('table.vandaag');
@@ -510,13 +463,13 @@
             default:
                 backgroundColor = 'white'; 
         }
-      var cellContent = '<div class="event" data-eventid="' + task.id + '" ' +
+      var cellContent = '<div class="event event-' + task.order_id +'" data-eventid="' + task.id + '" ' +
                         'data-eventname="' + task.name + '" ' +
                         'data-start="' + formattedStart + '" ' +
                         'data-end="' + formattedEnd + '" ' +
                         'data-description="' + task.description + '" ' +
                         'data-status="' + task.status + '" ' +
-                        'draggable="true" style="background-color: ' + backgroundColor + ';">' + task.name + '</div>';
+                        'draggable="true">' + task.name + '</div>';
       eventRow += cellContent;
     });
 
@@ -529,53 +482,39 @@
     var table = $('table.week');
     var tableBody = table.find('tbody');
     tableBody.empty();
+    
+    var weekRow = '<tr>';
 
-    $.each(weekEvents, function (eventIndex, event) {
-        var eventStartDate = new Date(event.start);
-        var eventEndDate = new Date(event.end);
-        var eventWeekStart = getWeekOfYear(eventStartDate);
-        var eventWeekEnd = getWeekOfYear(eventEndDate);
-        var formattedStart = eventStartDate.toISOString().split('T')[0];
-        var formattedEnd = eventEndDate.toISOString().split('T')[0];
-        var backgroundColor;
-
-        switch (event.status) {
-            case 'todo':
-                backgroundColor = '#ced4da';
-                break;
-            case 'in progress':
-                backgroundColor = '#00B4FC';
-                break;
-            case 'done':
-                backgroundColor = '#32de84';
-                break;
-            default:
-                backgroundColor = 'white';
-        }
-
-        var row = $('<tr>');
-
-        $.each(weekNumbers, function (index, weekNumber) {
-            if (weekNumber >= eventWeekStart && weekNumber <= eventWeekEnd) {
-                var cellContent = '<div class="event1" data-eventid="' + event.id + '" ' +
-                    'data-eventname="' + event.name + '" ' +
-                    'data-start="' + formattedStart + '" ' +
-                    'data-end="' + formattedEnd + '" ' +
-                    'data-description="' + event.description + '" ' +
-                    'data-status="' + event.status + '" ' +
-                    'draggable="true" style="background-color: ' + backgroundColor + ';">' + event.name + '</div>';
-                row.append('<td>' + cellContent + '</td>');
-            } else {
-                row.append('<td></td>');
+    $.each(weekNumbers, function(index, weekNumber) {
+        var cellContent = ''; // Initialize cell content as empty
+        
+        $.each(weekEvents, function(eventIndex, event) {
+            var eventStartDate = new Date(event.start);
+            var eventEndDate = new Date(event.end);
+            var eventWeek = getWeekOfYear(eventStartDate);
+            var formattedStart = eventStartDate.toISOString().split('T')[0];
+            var formattedEnd = eventEndDate.toISOString().split('T')[0];
+            
+            if (eventWeek === weekNumber) {
+                cellContent += '<div class="event event-' + event.order_id +'" data-eventid="' + event.id + '" ' +
+                        'data-eventname="' + event.name + '" ' +
+                        'data-start="' + formattedStart + '" ' +
+                        'data-end="' + formattedEnd + '" ' +
+                        'data-description="' + event.description + '" ' +
+                        'data-status="' + event.status + '" ' +
+                        'draggable="true">' + event.name + '</div>';
             }
         });
 
-        tableBody.append(row);
+        weekRow += '<td>' + cellContent + '</td>';
     });
+
+    weekRow += '</tr>';
+    tableBody.append(weekRow);
 
     var tableHead = table.find('thead');
     tableHead.empty();
-    $.each(weekNumbers, function (index, weekNumber) {
+    $.each(weekNumbers, function(index, weekNumber) {
         var newHeader = '<th>Week ' + weekNumber + '</th>';
         tableHead.append(newHeader);
     });
@@ -583,50 +522,6 @@
     var h1Element = $('h1.fourWeek');
     h1Element.find('strong').text('Week ' + weekNumbers[0] + ' - Week ' + weekNumbers[weekNumbers.length - 1]);
   }
-  function initializeDragAndDrop() {
-    var draggedWeekNumber;
-
-    $('.event1').on('dragstart', function (event) {
-        event.originalEvent.dataTransfer.setData('text/plain', event.target.dataset.eventid);
-        var index = $(this).closest('td').index() + 1;
-        draggedWeekNumber = weekNumbers[index - 1];
-    });
-
-    $('.week td').on('dragover', function (event) {
-        event.preventDefault();
-    });
-
-    $('.week td').on('drop', function (event) {
-        event.preventDefault();
-        var eventId = event.originalEvent.dataTransfer.getData('text/plain');
-        var targetTd = $(this);
-        var targetWeek = targetTd.closest('tr').find('td').index(targetTd) + 1;
-        var cellWeek = weekNumbers[targetWeek - 1];
-
-        $.ajax({
-            url: '/updateEventWeek',
-            method: 'POST',
-            data: {
-                _token: '{{ csrf_token() }}',
-                eventId: eventId,
-                cellWeek: cellWeek,
-                draggedWeekNumber: draggedWeekNumber,
-            },
-            success: function (response) {
-                console.log('Event updated successfully.');
-                location.reload();
-            },
-            error: function (error) {
-                console.error('Error updating event:', error);
-            }
-        });
-    });
-  }
-
-  $(document).ready(function () {
-      initializeDragAndDrop();
-  });
-
   function getWeekOfYear(date) {
       var startOfYear = new Date(date.getFullYear(), 0, 1);
       var diff = date - startOfYear;
@@ -677,6 +572,99 @@
     document.getElementById('nextButtonFiveWeek').style.display = "block";
   });
 
+  function initializeEventListeners() {
+    const events = document.querySelectorAll('.event1');
+    let draggedEvent = null;
+
+    function dragStart() {
+      draggedEvent = this;
+      this.classList.add('dragging');
+    }
+
+    function dragEnd() {
+        this.classList.remove('dragging');
+        draggedEvent = null;
+    }
+
+    events.forEach(event => {
+        event.addEventListener('dragstart', dragStart);
+        event.addEventListener('dragend', dragEnd);
+    });
+
+    const cells = document.querySelectorAll('td');
+
+    cells.forEach(cell => {
+        cell.addEventListener('dragover', dragOver);
+        cell.addEventListener('dragenter', dragEnter);
+        cell.addEventListener('dragleave', dragLeave);
+        cell.addEventListener('drop', dragDrop);
+    });
+
+    function dragOver(e) {
+      e.preventDefault();
+    }
+
+    function dragEnter(e) {
+        e.preventDefault();
+    }
+
+    function dragLeave() {}
+
+    function dragDrop() {
+      if (draggedEvent) {
+          const eventId = draggedEvent.getAttribute('data-eventid');
+          alert(eventId);
+          const eventName = draggedEvent.getAttribute('data-eventname');
+          let start = new Date(draggedEvent.getAttribute('data-start'));
+          let end = new Date(draggedEvent.getAttribute('data-end'));
+          let status = draggedEvent.getAttribute('data-status');
+          const columnIndex = Array.from(this.parentElement.children).indexOf(this);
+          const cellDate = new Date(weekDays[columnIndex]);
+          const now = new Date();
+          const hours = ('0' + now.getHours()).slice(-2);
+          const minutes = ('0' + now.getMinutes()).slice(-2);   
+          const seconds = ('0' + now.getSeconds()).slice(-2);
+
+          const currentTime = hours + ':' + minutes + ':' + seconds;
+
+          if (end.getDate() - start.getDate() > 0) {
+              if (cellDate < start) {
+                  start = cellDate;
+              } else {
+                  end = cellDate;
+              }
+          } else {
+              start = cellDate;
+              end = cellDate;
+          }
+          const formattedDate = start.toISOString().slice(0, 10);  
+          const formattedDate2 = end.toISOString().slice(0, 10);   
+
+          const combinedDateTime = formattedDate + ' ' + currentTime;
+          const combinedDateTime2 = formattedDate2 + ' ' + currentTime;
+
+          $.ajax({
+              url: "/updateItem",
+              method: 'POST',
+              data: {
+                  _token: '{{ csrf_token() }}',
+                  eventId: eventId,
+                  eventName: eventName,
+                  start: combinedDateTime,
+                  end: combinedDateTime2,
+              },
+              success: function (response) {
+                  console.log('Event moved successfully.');
+                  location. reload();
+                  // console.log(response);
+              },
+              error: function (error) {
+                  console.error('Error moving event:', error);
+              },
+          });
+      }
+    }
+  }
 
   const events = document.querySelectorAll('.event');
   let draggedEvent = null;
@@ -748,7 +736,7 @@
         const combinedDateTime2 = formattedDate2 + ' ' + currentTime;
 
         $.ajax({
-            url: "/updateEvent",
+            url: "/updateItem",
             method: 'POST',
             data: {
                 _token: '{{ csrf_token() }}',
@@ -772,6 +760,7 @@
     $(".event").on("dblclick", function(e) {
       const eventId = $(this).data("eventid");
       const eventname = $(this).data("eventname");
+      console.log(eventname);
       const start = $(this).data("start");
       const end = $(this).data("end");
       const description = $(this).data("description");
