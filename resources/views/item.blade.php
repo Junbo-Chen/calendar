@@ -95,57 +95,66 @@
           <div style="align-self: flex-start; flex: 0 0 1"></div>
     </div>
   </header>
-  
-    <div class="week" id="thisWeek" style="max-width: 1280px; height: 500px; max-height: 500px; overflow: hidden;">
-        <div style="overflow-y: scroll; max-height: 100%; height: 500px;">
-            <table class="combinedTable" style="width: 100%; table-layout: fixed;">
-                <thead>
-                    <tr>
-                        @foreach ($weekDays as $day)
-                            <th>{{ $day }}</th>
-                        @endforeach
-                    </tr>
-                </thead>
-                <tbody>
-                @foreach ($events as $event)
-                        @php
-                            $eventStart = \Carbon\Carbon::parse($event->start);
-                            $eventEnd = \Carbon\Carbon::parse($event->end);
-                            $eventDuration = $eventEnd->diffInDays($eventStart);
-                        @endphp
-                        <tr>
-                            @php $colspanSet = false; @endphp
-                            @foreach ($weekDays as $day)
-                                <td
-                                    @if ($eventStart->format('Y-m-d') <= $day && $eventEnd->format('Y-m-d') >= $day)
-                                        @if ($eventStart->format('Y-m-d') == $day && !$colspanSet)
-                                            colspan="{{ $eventDuration + 1 }}"
-                                            @php $colspanSet = true; @endphp
-                                        @else
-                                            style="display: none;"
-                                        @endif
-                                    @else
-                                        colspan="1"
-                                    @endif>
-                                    @if ($eventStart->format('Y-m-d') <= $day && $eventEnd->format('Y-m-d') >= $day)
-                                        <div class="event event-{{ $event->order_id }}" 
-                                            data-eventid="{{ $event->id }}" 
-                                            data-eventname="{{ $event->name }}" 
-                                            data-start="{{ $eventStart->format('Y-m-d') }}" 
-                                            data-end="{{ $eventEnd->format('Y-m-d') }}" 
-                                            data-description="{{ $event->description }}" 
-                                            data-status="{{ $event->status }}">
-                                            {{ $event->name }}
-                                        </div>
-                                    @endif
-                                </td>
-                            @endforeach
-                        </tr>
+
+  <div class="week" id="thisWeek" style="max-width: 1280px; height: 500px; max-height: 500px; overflow: hidden;">
+    <div style="overflow-y: scroll; max-height: 100%; height: 500px;">
+        <table class="combinedTable" style="width: 100%; table-layout: fixed;">
+            <thead>
+                <tr>
+                    @foreach ($weekDays as $day)
+                        <th>{{ $day }}</th>
                     @endforeach
-                </tbody>
-            </table>
-        </div>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach ($events as $event)
+              @php
+                $now = \Carbon\Carbon::now('Europe/Amsterdam')->locale('nl'); 
+                $weekStartDate = $now->startOfWeek()->format('Y-m-d');
+                $weekStart = \Carbon\Carbon::parse($weekStartDate);
+                $eventStart = \Carbon\Carbon::parse($event->start);
+                $eventEnd = \Carbon\Carbon::parse($event->end);
+                if ($eventStart < $weekStart) {
+                  $eventStart = $weekStart;
+                }
+                $eventDuration = $eventEnd->diffInDays($eventStart);
+              @endphp
+              <tr>
+                  @php $colspanSet = false; @endphp
+                  @foreach ($weekDays as $day)
+                      <td
+                          @if ($eventStart->format('Y-m-d') <= $day && $eventEnd->format('Y-m-d') >= $day)
+                              @if ($eventStart->format('Y-m-d') == $day && !$colspanSet)
+                                  @php
+                                      $colspan = min($eventDuration, 6 - \Carbon\Carbon::parse($day)->dayOfWeek + 1);
+                                      $colspanSet = true;
+                                  @endphp
+                                  colspan="{{ $colspan + 1 }}"
+                              @else
+                                  style="display: none;"
+                              @endif
+                          @else
+                              colspan="1"
+                          @endif>
+                          @if ($eventStart->format('Y-m-d') <= $day && $eventEnd->format('Y-m-d') >= $day)
+                          <div class="event event-{{ $event->order_id }}"  
+                                data-eventid="{{ $event->id }}" 
+                                data-eventname="{{ $event->name }}" 
+                                data-start="{{ $eventStart->format('Y-m-d') }}" 
+                                data-end="{{ $eventEnd->format('Y-m-d') }}" 
+                                data-description="{{ $event->description }}" 
+                                data-status="{{ $event->status }}">
+                                {{ $event->name }}
+                            </div>
+                          @endif
+                      </td>
+                  @endforeach
+              </tr>
+            @endforeach
+            </tbody>
+        </table>
     </div>
+  </div>
 
   <div id="editEventModal" class="modal" style="display:none">
       <div class="modal-dialog modal-dialog-centered">
@@ -227,41 +236,42 @@
 
   <div class="fiveWeek" id="fiveWeek" style="display:none">
     <div style="overflow-y: scroll; max-height: 100%;height:500px">
-      <table class="week">
-          <thead>
-              <tr>
-                  @foreach ($weekNumbers as $number)
-                      <th>Week {{ $number }}</th>
-                  @endforeach
-              </tr>
-          </thead>
-          <tbody>
-              <tr>
-                  @foreach ($weekNumbers as $weekNumber)
-                      <td>
-                          @foreach ($weekEvents as $event)
-                            @php
-                                $eventStart = \Carbon\Carbon::parse($event->start);
-                                $eventEnd = \Carbon\Carbon::parse($event->end);
-                            @endphp
-                              @if (\Carbon\Carbon::parse($event->start)->weekOfYear == $weekNumber || \Carbon\Carbon::parse($event->end)->weekOfYear == $weekNumber)
-                              <div class="event1 event-{{ $event->order_id }}" 
-                                data-eventid="{{ $event->id }}" 
-                                data-eventname="{{ $event->name }}" 
-                                data-start="{{ $eventStart->format('Y-m-d') }}" 
-                                data-end="{{ $eventEnd->format('Y-m-d') }}" 
-                                data-description="{{ $event->description }}" 
-                                data-status="{{ $event->status }}">
-                                {{ $event->name }}
-                            </div>
-                              @endif
-                          @endforeach
-                      </td>
-                  @endforeach
-              </tr>
-          </tbody>
-      </table>
+        <table class="week">
+            <thead>
+                <tr>
+                    @foreach ($weekNumbers as $number)
+                        <th>Week {{ $number }}</th>
+                    @endforeach
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($events as $event)
+                    @php
+                        $eventStart = \Carbon\Carbon::parse($event->start);
+                        $eventEnd = \Carbon\Carbon::parse($event->end);
+                    @endphp
+                    <tr>
+                        @foreach ($weekNumbers as $weekNumber)
+                            <td>
+                                @if ($eventStart->weekOfYear <= $weekNumber && $eventEnd->weekOfYear >= $weekNumber)
+                                  <div class="event1 event-{{ $event->order_id }}" 
+                                        data-eventid="{{ $event->id }}" 
+                                        data-eventname="{{ $event->name }}" 
+                                        data-start="{{ $eventStart->format('Y-m-d') }}" 
+                                        data-end="{{ $eventEnd->format('Y-m-d') }}" 
+                                        data-description="{{ $event->description }}" 
+                                        data-status="{{ $event->status }}">
+                                        {{ $event->name }}
+                                    </div>
+                                @endif
+                            </td>
+                        @endforeach
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
     </div>
+  </div>
 </div>
 
 </x-app-layout>
@@ -277,6 +287,7 @@
   var weekEvents = @json($weekEvents); 
 
   $(document).ready(function() {
+    initializeDragAndDrop2();
     $('#nextButtonWeek').on('click', function() {
       sendPostRequest('next');
     });
@@ -289,13 +300,6 @@
     });
     $('#nextButtonDay').on('click',function(){
       sendPostDayRequest('next');
-    });
-    $('#nextButtonFiveWeek').on('click', function() {
-      sendPostFiveWeekRequest('next');
-    });
-
-    $('#previousButtonFiveWeek').on('click', function() {
-      sendPostFiveWeekRequest('previous');
     });
     function sendPostDayRequest(action) {
       $.ajax({
@@ -320,27 +324,6 @@
         }
       });
     }
-    function sendPostFiveWeekRequest(action) {
-      $.ajax({
-        url: "{{ route('calendar.paginationFiveWeek') }}",
-        type: 'POST',
-        data: {
-          _token: '{{ csrf_token() }}',
-          action: action,
-          weekNumbers: weekNumbers,
-          weekEvents: weekEvents,
-        },
-        success: function(response) {
-          weekNumbers = response.weekNumbers;
-          updateTableFiveWeek(response.weekNumbers,response.weekEvents,response.nextWeekNumber);
-          console.log('POST request successful:', response);
-        },
-        error: function(error) {
-          console.error('POST request error:', error);
-        }
-      });
-    }
-
     function sendPostRequest(action) {
       $.ajax({
         url: "{{ route('calendar.pagination') }}",
@@ -353,12 +336,13 @@
           task: task,
         },
         success: function(response) {
-          // console.log('POST request successful:', response);
+          console.log('POST request successful:', response);
           weekDays = response.weekDays;
           start = response.start;
           end = response.end;
           year = response.year;
           updateTable(response.weekDays,start,end,year,response.task);
+          initializeDragAndDrop2();
         },
         error: function(error) {
           console.error('POST request error:', error);
@@ -366,6 +350,11 @@
       });
     }
   });
+  function formatDate(date) {
+        var timezoneOffset = date.getTimezoneOffset();
+        date.setMinutes(date.getMinutes() - timezoneOffset);
+        return date.toISOString().split('T')[0];
+    }
   function updateTable(weekDays, start, end, year, task) {
     var table = $('table.combinedTable');
     var tableBody = table.find('tbody');
@@ -376,38 +365,52 @@
         var eventStart = new Date(task.start);
         var eventEnd = new Date(task.end);
 
-        var formattedStart = eventStart.toISOString().split('T')[0];
-        var formattedEnd = eventEnd.toISOString().split('T')[0];
+        var formattedStart = formatDate(eventStart);
+        var formattedEnd = formatDate(eventEnd);
 
-        if (eventStart.toDateString() !== eventEnd.toDateString()) {
-            eventStart.setDate(eventStart.getDate() - 1);
-        }
-
-        var eventDuration = Math.ceil((eventEnd - eventStart) / (1000 * 60 * 60 * 24));
-        var isSameDayEvent = eventStart.toDateString() === eventEnd.toDateString();
+        var isSameDay = eventStart.toDateString() === new Date(weekDays[0]).toDateString();
+        var isSameDay2 = eventStart.toDateString() === new Date(weekDays[1]).toDateString();
+        var isSameDay3 = eventStart.toDateString() === new Date(weekDays[2]).toDateString();
+        var isSameDay4 = eventStart.toDateString() === new Date(weekDays[3]).toDateString();
+        var isSameDay5 = eventStart.toDateString() === new Date(weekDays[4]).toDateString();
+        var isSameDay6 = eventStart.toDateString() === new Date(weekDays[5]).toDateString();
+        var isSameDay7 = eventStart.toDateString() === new Date(weekDays[6]).toDateString();
 
         var taskCell = '';
-        if (eventDuration > 1) {
-            taskCell = '<td colspan="' + eventDuration + '">';
-        } else {
-            taskCell = '<td colspan="1">';
+        var eventDuration = Math.ceil((eventEnd - eventStart) / (1000 * 60 * 60 * 24) + 1);
+
+        if (eventStart < new Date(weekDays[0])) {
+            eventDuration -= Math.ceil((new Date(weekDays[0]) - eventStart) / (1000 * 60 * 60 * 24));
+            eventStart = new Date(weekDays[0]);
         }
 
-
-        taskCell += '<div class="event event-' + task.order_id +'" data-eventid="' + task.id + '" ' +
-                    'data-eventname="' + task.name + '" ' +
-                    'data-start="' + formattedStart + '" ' +
-                    'data-end="' + formattedEnd + '" ' +
-                    'data-description="' + task.description + '" ' +
-                    'data-status="' + task.status + '" ' +
-                    'draggable="true">' + task.name + '</div>';
-        taskCell += '</td>';
+        if (eventDuration >= 1) {
+            taskCell = '<td colspan="' + eventDuration + '">';
+            taskCell += '<div class="event event-' + task.order_id +'" data-eventid="' + task.id + '" ' +
+                        'data-eventname="' + task.name + '" ' +
+                        'data-start="' + formattedStart + '" ' +
+                        'data-end="' + formattedEnd + '" ' +
+                        'data-description="' + task.description + '" ' +
+                        'data-status="' + task.status + '" ' +
+                        'draggable="true"->' + task.name + '</div>';
+            taskCell += '</td>';
+        } else {
+            taskCell = '<td>';
+            taskCell += '<div class="event event-' + task.order_id +'" data-eventid="' + task.id + '" ' +
+                        'data-eventname="' + task.name + '" ' +
+                        'data-start="' + formattedStart + '" ' +
+                        'data-end="' + formattedEnd + '" ' +
+                        'data-description="' + task.description + '" ' +
+                        'data-status="' + task.status + '" ' +
+                        'draggable="true">' + task.name + '</div>';
+            taskCell += '</td>';
+        }
 
         var cellAdded = false;
 
         $.each(weekDays, function(dayIndex, day) {
             var currentDay = new Date(day);
-            if (!cellAdded && ((isSameDayEvent && currentDay.toDateString() === eventStart.toDateString()) || (currentDay >= eventStart && currentDay <= eventEnd))) {
+            if (!cellAdded && ((isSameDay7 && currentDay.toDateString() === eventStart.toDateString()) || (isSameDay6 && currentDay.toDateString() === eventStart.toDateString()) || (isSameDay5 && currentDay.toDateString() === eventStart.toDateString()) || (isSameDay4 && currentDay.toDateString() === eventStart.toDateString()) || (isSameDay4 && currentDay.toDateString() === eventStart.toDateString()) || (isSameDay3 && currentDay.toDateString() === eventStart.toDateString()) || (isSameDay2 && currentDay.toDateString() === eventStart.toDateString()) || (isSameDay && currentDay.toDateString() === eventStart.toDateString()) || (currentDay >= eventStart && currentDay <= eventEnd))) {
                 taskRow += taskCell;
                 cellAdded = true;
             } else {
@@ -426,10 +429,10 @@
         var newHeader = '<th>' + day + '</th>';
         tableHead.append(newHeader);
     });
-    initializeEventListeners();
     var h1Element = $('h1.week');
     h1Element.html('<span></span><strong>' + start + ' - ' + end + '</strong> ' + year);
   }
+
   function updateTableDay(day1, today, task) {
 
     var table = $('table.vandaag');
@@ -469,7 +472,7 @@
                         'data-end="' + formattedEnd + '" ' +
                         'data-description="' + task.description + '" ' +
                         'data-status="' + task.status + '" ' +
-                        'draggable="true">' + task.name + '</div>';
+                        'draggable="true" style="background-color: ' + backgroundColor + ';">' + task.name + '</div>';
       eventRow += cellContent;
     });
 
@@ -482,39 +485,38 @@
     var table = $('table.week');
     var tableBody = table.find('tbody');
     tableBody.empty();
-    
-    var weekRow = '<tr>';
 
-    $.each(weekNumbers, function(index, weekNumber) {
-        var cellContent = ''; // Initialize cell content as empty
-        
-        $.each(weekEvents, function(eventIndex, event) {
-            var eventStartDate = new Date(event.start);
-            var eventEndDate = new Date(event.end);
-            var eventWeek = getWeekOfYear(eventStartDate);
-            var formattedStart = eventStartDate.toISOString().split('T')[0];
-            var formattedEnd = eventEndDate.toISOString().split('T')[0];
-            
-            if (eventWeek === weekNumber) {
-                cellContent += '<div class="event event-' + event.order_id +'" data-eventid="' + event.id + '" ' +
-                        'data-eventname="' + event.name + '" ' +
-                        'data-start="' + formattedStart + '" ' +
-                        'data-end="' + formattedEnd + '" ' +
-                        'data-description="' + event.description + '" ' +
-                        'data-status="' + event.status + '" ' +
-                        'draggable="true">' + event.name + '</div>';
+    $.each(weekEvents, function (eventIndex, event) {
+        var eventStartDate = new Date(event.start);
+        var eventEndDate = new Date(event.end);
+        var eventWeekStart = getWeekOfYear(eventStartDate);
+        var eventWeekEnd = getWeekOfYear(eventEndDate);
+        var formattedStart = eventStartDate.toISOString().split('T')[0];
+        var formattedEnd = eventEndDate.toISOString().split('T')[0];
+
+        var row = $('<tr>');
+
+        $.each(weekNumbers, function (index, weekNumber) {
+            if (weekNumber >= eventWeekStart && weekNumber <= eventWeekEnd) {
+                var cellContent = '<div class="event1 event-' + event.order_id +'"  data-eventid="' + event.id + '" ' +
+                    'data-eventname="' + event.name + '" ' +
+                    'data-start="' + formattedStart + '" ' +
+                    'data-end="' + formattedEnd + '" ' +
+                    'data-description="' + event.description + '" ' +
+                    'data-status="' + event.status + '" ' +
+                    'draggable="true">' + event.name + '</div>';
+                row.append('<td>' + cellContent + '</td>');
+            } else {
+                row.append('<td></td>');
             }
         });
 
-        weekRow += '<td>' + cellContent + '</td>';
+        tableBody.append(row);
     });
-
-    weekRow += '</tr>';
-    tableBody.append(weekRow);
 
     var tableHead = table.find('thead');
     tableHead.empty();
-    $.each(weekNumbers, function(index, weekNumber) {
+    $.each(weekNumbers, function (index, weekNumber) {
         var newHeader = '<th>Week ' + weekNumber + '</th>';
         tableHead.append(newHeader);
     });
@@ -522,6 +524,79 @@
     var h1Element = $('h1.fourWeek');
     h1Element.find('strong').text('Week ' + weekNumbers[0] + ' - Week ' + weekNumbers[weekNumbers.length - 1]);
   }
+  function initializeDragAndDrop() {
+    var draggedWeekNumber;
+
+    $('.event1').on('dragstart', function (event) {
+        event.originalEvent.dataTransfer.setData('text/plain', event.target.dataset.eventid);
+        var index = $(this).closest('td').index() + 1;
+        draggedWeekNumber = weekNumbers[index - 1];
+    });
+
+    $('.week td').on('dragover', function (event) {
+        event.preventDefault();
+    });
+
+    $('.week td').on('drop', function (event) {
+        event.preventDefault();
+        var eventId = event.originalEvent.dataTransfer.getData('text/plain');
+        var targetTd = $(this);
+        var targetWeek = targetTd.closest('tr').find('td').index(targetTd) + 1;
+        var cellWeek = weekNumbers[targetWeek - 1];
+
+        $.ajax({
+            url: '/updateItemWeek',
+            method: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}',
+                eventId: eventId,
+                cellWeek: cellWeek,
+                draggedWeekNumber: draggedWeekNumber,
+            },
+            success: function (response) {
+                console.log('Event updated successfully.');
+                location.reload();
+            },
+            error: function (error) {
+                console.error('Error updating event:', error);
+            }
+        });
+    });
+  }
+
+  $(document).ready(function () {
+    initializeDragAndDrop();
+    
+    $('#nextButtonFiveWeek').on('click', function () {
+        sendPostFiveWeekRequest('next');
+    });
+
+    $('#previousButtonFiveWeek').on('click', function () {
+        sendPostFiveWeekRequest('previous');
+    });
+  });
+  function sendPostFiveWeekRequest(action) {
+      $.ajax({
+        url: "{{ route('calendar.paginationItemFiveWeek') }}",
+        type: 'POST',
+        data: {
+          _token: '{{ csrf_token() }}',
+          action: action,
+          weekNumbers: weekNumbers,
+          weekEvents: weekEvents,
+        },
+        success: function(response) {
+          weekNumbers = response.weekNumbers;
+          updateTableFiveWeek(response.weekNumbers,response.weekEvents,response.nextWeekNumber);
+          console.log('POST request successful:', response);
+          initializeDragAndDrop();
+        },
+        error: function(error) {
+          console.error('POST request error:', error);
+        }
+      });
+  }
+
   function getWeekOfYear(date) {
       var startOfYear = new Date(date.getFullYear(), 0, 1);
       var diff = date - startOfYear;
@@ -572,24 +647,24 @@
     document.getElementById('nextButtonFiveWeek').style.display = "block";
   });
 
-  function initializeEventListeners() {
-    const events = document.querySelectorAll('.event1');
+  function initializeDragAndDrop2() {
+    const events = document.querySelectorAll('.event');
     let draggedEvent = null;
 
+    events.forEach(event => {
+        event.addEventListener('dragstart', dragStart);
+        event.addEventListener('dragend', dragEnd);
+    });
+
     function dragStart() {
-      draggedEvent = this;
-      this.classList.add('dragging');
+        draggedEvent = this;
+        this.classList.add('dragging');
     }
 
     function dragEnd() {
         this.classList.remove('dragging');
         draggedEvent = null;
     }
-
-    events.forEach(event => {
-        event.addEventListener('dragstart', dragStart);
-        event.addEventListener('dragend', dragEnd);
-    });
 
     const cells = document.querySelectorAll('td');
 
@@ -601,7 +676,7 @@
     });
 
     function dragOver(e) {
-      e.preventDefault();
+        e.preventDefault();
     }
 
     function dragEnter(e) {
@@ -611,156 +686,39 @@
     function dragLeave() {}
 
     function dragDrop() {
-      if (draggedEvent) {
-          const eventId = draggedEvent.getAttribute('data-eventid');
-          alert(eventId);
-          const eventName = draggedEvent.getAttribute('data-eventname');
-          let start = new Date(draggedEvent.getAttribute('data-start'));
-          let end = new Date(draggedEvent.getAttribute('data-end'));
-          let status = draggedEvent.getAttribute('data-status');
-          const columnIndex = Array.from(this.parentElement.children).indexOf(this);
-          const cellDate = new Date(weekDays[columnIndex]);
-          const now = new Date();
-          const hours = ('0' + now.getHours()).slice(-2);
-          const minutes = ('0' + now.getMinutes()).slice(-2);   
-          const seconds = ('0' + now.getSeconds()).slice(-2);
-
-          const currentTime = hours + ':' + minutes + ':' + seconds;
-
-          if (end.getDate() - start.getDate() > 0) {
-              if (cellDate < start) {
-                  start = cellDate;
-              } else {
-                  end = cellDate;
-              }
-          } else {
-              start = cellDate;
-              end = cellDate;
-          }
-          const formattedDate = start.toISOString().slice(0, 10);  
-          const formattedDate2 = end.toISOString().slice(0, 10);   
-
-          const combinedDateTime = formattedDate + ' ' + currentTime;
-          const combinedDateTime2 = formattedDate2 + ' ' + currentTime;
-
-          $.ajax({
-              url: "/updateItem",
-              method: 'POST',
-              data: {
-                  _token: '{{ csrf_token() }}',
-                  eventId: eventId,
-                  eventName: eventName,
-                  start: combinedDateTime,
-                  end: combinedDateTime2,
-              },
-              success: function (response) {
-                  console.log('Event moved successfully.');
-                  location. reload();
-                  // console.log(response);
-              },
-              error: function (error) {
-                  console.error('Error moving event:', error);
-              },
-          });
-      }
-    }
-  }
-
-  const events = document.querySelectorAll('.event');
-  let draggedEvent = null;
-
-  events.forEach(event => {
-      event.addEventListener('dragstart', dragStart);
-      event.addEventListener('dragend', dragEnd);
-  });
-
-  function dragStart() {
-      draggedEvent = this;
-      this.classList.add('dragging');
-  }
-
-  function dragEnd() {
-      this.classList.remove('dragging');
-      draggedEvent = null;
-  }
-
-  const cells = document.querySelectorAll('td');
-
-  cells.forEach(cell => {
-      cell.addEventListener('dragover', dragOver);
-      cell.addEventListener('dragenter', dragEnter);
-      cell.addEventListener('dragleave', dragLeave);
-      cell.addEventListener('drop', dragDrop);
-  });
-
-  function dragOver(e) {
-      e.preventDefault();
-  }
-
-  function dragEnter(e) {
-      e.preventDefault();
-  }
-
-  function dragLeave() {}
-
-  function dragDrop() {
-    if (draggedEvent) {
-        const eventId = draggedEvent.getAttribute('data-eventid');
-        const eventName = draggedEvent.getAttribute('data-eventname');
-        let start = new Date(draggedEvent.getAttribute('data-start'));
-        let end = new Date(draggedEvent.getAttribute('data-end'));
-        let status = draggedEvent.getAttribute('data-status');
-        const columnIndex = Array.from(this.parentElement.children).indexOf(this);
-        const cellDate = new Date(weekDays[columnIndex]);
-        const now = new Date();
-        const hours = ('0' + now.getHours()).slice(-2);
-        const minutes = ('0' + now.getMinutes()).slice(-2);   
-        const seconds = ('0' + now.getSeconds()).slice(-2);
-
-        const currentTime = hours + ':' + minutes + ':' + seconds;
-
-        if (end.getDate() - start.getDate() > 0) {
-            if (cellDate < start) {
-                start = cellDate;
-            } else {
-                end = cellDate;
-            }
-        } else {
-            start = cellDate;
-            end = cellDate;
+        if (draggedEvent) {
+            const eventId = draggedEvent.getAttribute('data-eventid');
+            const eventName = draggedEvent.getAttribute('data-eventname');
+            let start = new Date(draggedEvent.getAttribute('data-start'));
+            let end = new Date(draggedEvent.getAttribute('data-end'));
+            let status = draggedEvent.getAttribute('data-status');
+            const columnIndex = Array.from(this.parentElement.children).indexOf(this);
+            const cellDate = new Date(weekDays[columnIndex]);
+            $.ajax({
+                url: "/updateItem",
+                method: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    eventId: eventId,
+                    eventName: eventName,
+                    start: start,
+                    cellDate: cellDate,
+                },
+                success: function (response) {
+                    console.log('Event moved successfully.');
+                    location.reload();
+                },
+                error: function (error) {
+                    console.error('Error moving event:', error);
+                },
+            });
         }
-        const formattedDate = start.toISOString().slice(0, 10);  
-        const formattedDate2 = end.toISOString().slice(0, 10);   
-
-        const combinedDateTime = formattedDate + ' ' + currentTime;
-        const combinedDateTime2 = formattedDate2 + ' ' + currentTime;
-
-        $.ajax({
-            url: "/updateItem",
-            method: 'POST',
-            data: {
-                _token: '{{ csrf_token() }}',
-                eventId: eventId,
-                eventName: eventName,
-                start: combinedDateTime,
-                end: combinedDateTime2,
-            },
-            success: function (response) {
-                console.log('Event moved successfully.');
-                location. reload();
-                // console.log(response);
-            },
-            error: function (error) {
-                console.error('Error moving event:', error);
-            },
-        });
     }
   }
   $(document).ready(function() {
     $(".event").on("dblclick", function(e) {
       const eventId = $(this).data("eventid");
       const eventname = $(this).data("eventname");
-      console.log(eventname);
       const start = $(this).data("start");
       const end = $(this).data("end");
       const description = $(this).data("description");

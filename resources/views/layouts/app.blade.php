@@ -20,6 +20,9 @@
               margin: 0;
               border: 0;
             }
+            tr, tr td {
+                height: 43px;
+            }
             .modal {
                 display: flex;
                 align-items: center;
@@ -139,9 +142,9 @@
 
             }
 
-            tr, tr td {
+            /* tr, tr td {
               height: 20px;
-            }
+            } */
             td {
               text-align: center;
             }

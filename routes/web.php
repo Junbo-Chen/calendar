@@ -33,6 +33,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/calendar/pagination',[DayController::class, 'pagination'])->name('calendar.pagination')->middleware('web');
     Route::post('/calendar/paginationDay',[DayController::class, 'paginationDay'])->name('calendar.paginationDay')->middleware('web');
     Route::post('/calendar/paginationFiveWeek',[DayController::class, 'paginationFiveWeek'])->name('calendar.paginationFiveWeek')->middleware('web');
+    Route::post('/calendar/paginationItemFiveWeek',[ItemController::class, 'paginationItemFiveWeek'])->name('calendar.paginationItemFiveWeek')->middleware('web');
     Route::post('/createEvent',[EventController::class,'create'])->name('createEvent');
     Route::post('/editEvent',[EventController::class,'edit'])->name('editEvent');
     Route::post('/editItem',[EventController::class,'editItem'])->name('editItem');
@@ -40,6 +41,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/updateEvent',[EventController::class,'update'])->name('updateEvent');
     Route::post('/updateEventWeek',[EventController::class,'updateWeek'])->name('updateEventWeek');
     Route::post('/updateItem',[EventController::class,'updateItem'])->name('updateItem');
+    Route::post('/updateItemWeek',[EventController::class,'updateItemWeek'])->name('updateItemWeek');
     Route::get('/item',[ItemController::class,'index'])->name('item');
 });
 

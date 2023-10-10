@@ -118,7 +118,7 @@
                                       $colspan = min($eventDuration, 6 - \Carbon\Carbon::parse($day)->dayOfWeek + 1);
                                       $colspanSet = true;
                                   @endphp
-                                  colspan="{{ $colspan }}"
+                                  colspan="{{ $colspan + 1 }}"
                               @else
                                   style="display: none;"
                               @endif
@@ -300,6 +300,7 @@
   var weekEvents = @json($weekEvents); 
 
   $(document).ready(function() {
+    initializeDragAndDrop2();
     $('#nextButtonWeek').on('click', function() {
       sendPostRequest('next');
     });
@@ -312,13 +313,6 @@
     });
     $('#nextButtonDay').on('click',function(){
       sendPostDayRequest('next');
-    });
-    $('#nextButtonFiveWeek').on('click', function() {
-      sendPostFiveWeekRequest('next');
-    });
-
-    $('#previousButtonFiveWeek').on('click', function() {
-      sendPostFiveWeekRequest('previous');
     });
     function sendPostDayRequest(action) {
       $.ajax({
@@ -343,27 +337,6 @@
         }
       });
     }
-    function sendPostFiveWeekRequest(action) {
-      $.ajax({
-        url: "{{ route('calendar.paginationFiveWeek') }}",
-        type: 'POST',
-        data: {
-          _token: '{{ csrf_token() }}',
-          action: action,
-          weekNumbers: weekNumbers,
-          weekEvents: weekEvents,
-        },
-        success: function(response) {
-          weekNumbers = response.weekNumbers;
-          updateTableFiveWeek(response.weekNumbers,response.weekEvents,response.nextWeekNumber);
-          console.log('POST request successful:', response);
-        },
-        error: function(error) {
-          console.error('POST request error:', error);
-        }
-      });
-    }
-
     function sendPostRequest(action) {
       $.ajax({
         url: "{{ route('calendar.pagination') }}",
@@ -382,6 +355,7 @@
           end = response.end;
           year = response.year;
           updateTable(response.weekDays,start,end,year,response.task);
+          initializeDragAndDrop2();
         },
         error: function(error) {
           console.error('POST request error:', error);
@@ -389,6 +363,11 @@
       });
     }
   });
+  function formatDate(date) {
+        var timezoneOffset = date.getTimezoneOffset();
+        date.setMinutes(date.getMinutes() - timezoneOffset);
+        return date.toISOString().split('T')[0];
+    }
   function updateTable(weekDays, start, end, year, task) {
     var table = $('table.combinedTable');
     var tableBody = table.find('tbody');
@@ -399,14 +378,19 @@
         var eventStart = new Date(task.start);
         var eventEnd = new Date(task.end);
 
-        var formattedStart = eventStart.toISOString().split('T')[0];
-        var formattedEnd = eventEnd.toISOString().split('T')[0];
+        var formattedStart = formatDate(eventStart);
+        var formattedEnd = formatDate(eventEnd);
 
         var isSameDay = eventStart.toDateString() === new Date(weekDays[0]).toDateString();
-
+        var isSameDay2 = eventStart.toDateString() === new Date(weekDays[1]).toDateString();
+        var isSameDay3 = eventStart.toDateString() === new Date(weekDays[2]).toDateString();
+        var isSameDay4 = eventStart.toDateString() === new Date(weekDays[3]).toDateString();
+        var isSameDay5 = eventStart.toDateString() === new Date(weekDays[4]).toDateString();
+        var isSameDay6 = eventStart.toDateString() === new Date(weekDays[5]).toDateString();
+        var isSameDay7 = eventStart.toDateString() === new Date(weekDays[6]).toDateString();
 
         var taskCell = '';
-        var eventDuration = Math.ceil((eventEnd - eventStart) / (1000 * 60 * 60 * 24));
+        var eventDuration = Math.ceil((eventEnd - eventStart) / (1000 * 60 * 60 * 24) + 1);
 
         if (eventStart < new Date(weekDays[0])) {
             eventDuration -= Math.ceil((new Date(weekDays[0]) - eventStart) / (1000 * 60 * 60 * 24));
@@ -454,7 +438,7 @@
 
         $.each(weekDays, function(dayIndex, day) {
             var currentDay = new Date(day);
-            if (!cellAdded && ((isSameDay && currentDay.toDateString() === eventStart.toDateString()) || (currentDay >= eventStart && currentDay <= eventEnd))) {
+            if (!cellAdded && ((isSameDay7 && currentDay.toDateString() === eventStart.toDateString()) || (isSameDay6 && currentDay.toDateString() === eventStart.toDateString()) || (isSameDay5 && currentDay.toDateString() === eventStart.toDateString()) || (isSameDay4 && currentDay.toDateString() === eventStart.toDateString()) || (isSameDay4 && currentDay.toDateString() === eventStart.toDateString()) || (isSameDay3 && currentDay.toDateString() === eventStart.toDateString()) || (isSameDay2 && currentDay.toDateString() === eventStart.toDateString()) || (isSameDay && currentDay.toDateString() === eventStart.toDateString()) || (currentDay >= eventStart && currentDay <= eventEnd))) {
                 taskRow += taskCell;
                 cellAdded = true;
             } else {
@@ -624,8 +608,37 @@
   }
 
   $(document).ready(function () {
-      initializeDragAndDrop();
+    initializeDragAndDrop();
+    
+    $('#nextButtonFiveWeek').on('click', function () {
+        sendPostFiveWeekRequest('next');
+    });
+
+    $('#previousButtonFiveWeek').on('click', function () {
+        sendPostFiveWeekRequest('previous');
+    });
   });
+  function sendPostFiveWeekRequest(action) {
+      $.ajax({
+        url: "{{ route('calendar.paginationFiveWeek') }}",
+        type: 'POST',
+        data: {
+          _token: '{{ csrf_token() }}',
+          action: action,
+          weekNumbers: weekNumbers,
+          weekEvents: weekEvents,
+        },
+        success: function(response) {
+          weekNumbers = response.weekNumbers;
+          updateTableFiveWeek(response.weekNumbers,response.weekEvents,response.nextWeekNumber);
+          console.log('POST request successful:', response);
+          initializeDragAndDrop();
+        },
+        error: function(error) {
+          console.error('POST request error:', error);
+        }
+      });
+  }
 
   function getWeekOfYear(date) {
       var startOfYear = new Date(date.getFullYear(), 0, 1);
@@ -677,95 +690,72 @@
     document.getElementById('nextButtonFiveWeek').style.display = "block";
   });
 
+  function initializeDragAndDrop2() {
+    const events = document.querySelectorAll('.event');
+    let draggedEvent = null;
 
-  const events = document.querySelectorAll('.event');
-  let draggedEvent = null;
+    events.forEach(event => {
+        event.addEventListener('dragstart', dragStart);
+        event.addEventListener('dragend', dragEnd);
+    });
 
-  events.forEach(event => {
-      event.addEventListener('dragstart', dragStart);
-      event.addEventListener('dragend', dragEnd);
-  });
+    function dragStart() {
+        draggedEvent = this;
+        this.classList.add('dragging');
+    }
 
-  function dragStart() {
-      draggedEvent = this;
-      this.classList.add('dragging');
-  }
+    function dragEnd() {
+        this.classList.remove('dragging');
+        draggedEvent = null;
+    }
 
-  function dragEnd() {
-      this.classList.remove('dragging');
-      draggedEvent = null;
-  }
+    const cells = document.querySelectorAll('td');
 
-  const cells = document.querySelectorAll('td');
+    cells.forEach(cell => {
+        cell.addEventListener('dragover', dragOver);
+        cell.addEventListener('dragenter', dragEnter);
+        cell.addEventListener('dragleave', dragLeave);
+        cell.addEventListener('drop', dragDrop);
+    });
 
-  cells.forEach(cell => {
-      cell.addEventListener('dragover', dragOver);
-      cell.addEventListener('dragenter', dragEnter);
-      cell.addEventListener('dragleave', dragLeave);
-      cell.addEventListener('drop', dragDrop);
-  });
+    function dragOver(e) {
+        e.preventDefault();
+    }
 
-  function dragOver(e) {
-      e.preventDefault();
-  }
+    function dragEnter(e) {
+        e.preventDefault();
+    }
 
-  function dragEnter(e) {
-      e.preventDefault();
-  }
+    function dragLeave() {}
 
-  function dragLeave() {}
-
-  function dragDrop() {
-    if (draggedEvent) {
-        const eventId = draggedEvent.getAttribute('data-eventid');
-        const eventName = draggedEvent.getAttribute('data-eventname');
-        let start = new Date(draggedEvent.getAttribute('data-start'));
-        let end = new Date(draggedEvent.getAttribute('data-end'));
-        let status = draggedEvent.getAttribute('data-status');
-        const columnIndex = Array.from(this.parentElement.children).indexOf(this);
-        const cellDate = new Date(weekDays[columnIndex]);
-        const now = new Date();
-        const hours = ('0' + now.getHours()).slice(-2);
-        const minutes = ('0' + now.getMinutes()).slice(-2);   
-        const seconds = ('0' + now.getSeconds()).slice(-2);
-
-        const currentTime = hours + ':' + minutes + ':' + seconds;
-
-        if (end.getDate() - start.getDate() > 0) {
-            if (cellDate < start) {
-                start = cellDate;
-            } else {
-                end = cellDate;
-            }
-        } else {
-            start = cellDate;
-            end = cellDate;
+    function dragDrop() {
+        if (draggedEvent) {
+            const eventId = draggedEvent.getAttribute('data-eventid');
+            const eventName = draggedEvent.getAttribute('data-eventname');
+            let start = new Date(draggedEvent.getAttribute('data-start'));
+            let end = new Date(draggedEvent.getAttribute('data-end'));
+            let status = draggedEvent.getAttribute('data-status');
+            const columnIndex = Array.from(this.parentElement.children).indexOf(this);
+            const cellDate = new Date(weekDays[columnIndex]);
+            $.ajax({
+                url: "/updateEvent",
+                method: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    eventId: eventId,
+                    eventName: eventName,
+                    start: start,
+                    cellDate: cellDate,
+                },
+                success: function (response) {
+                    console.log('Event moved successfully.');
+                    location.reload();
+                },
+                error: function (error) {
+                    console.error('Error moving event:', error);
+                },
+            });
         }
-        const formattedDate = start.toISOString().slice(0, 10);  
-        const formattedDate2 = end.toISOString().slice(0, 10);   
-
-        const combinedDateTime = formattedDate + ' ' + currentTime;
-        const combinedDateTime2 = formattedDate2 + ' ' + currentTime;
-
-        $.ajax({
-            url: "/updateEvent",
-            method: 'POST',
-            data: {
-                _token: '{{ csrf_token() }}',
-                eventId: eventId,
-                eventName: eventName,
-                start: combinedDateTime,
-                end: combinedDateTime2,
-            },
-            success: function (response) {
-                console.log('Event moved successfully.');
-                location. reload();
-                // console.log(response);
-            },
-            error: function (error) {
-                console.error('Error moving event:', error);
-            },
-        });
     }
   }
   $(document).ready(function() {

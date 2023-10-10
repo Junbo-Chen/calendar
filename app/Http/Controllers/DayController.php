@@ -7,6 +7,7 @@ use Carbon\Carbon;
 use App\Models\Event;
 use App\Models\Order;
 use Illuminate\Support\Facades\DB;
+use DateTime;
 
 class DayController extends Controller
 {
@@ -34,6 +35,7 @@ class DayController extends Controller
         ->orderBy('order_event.order_id')
         ->orderBy('events.name', 'asc')
         ->get();
+        // dd($events);
         $weekNumbers = [
             Carbon::parse($weekStartDate)->subWeeks(2)->weekOfYear,
             Carbon::parse($weekStartDate)->subWeeks(1)->weekOfYear,
@@ -47,7 +49,6 @@ class DayController extends Controller
                 ->orWhereIn(DB::raw('WEEK(end)'), $weekNumbers);
         })->orderBy('name', 'asc')->get();
 
-        
         $weekDays = [];
         
         while ($weekStartDate <= $weekEndDate) {
